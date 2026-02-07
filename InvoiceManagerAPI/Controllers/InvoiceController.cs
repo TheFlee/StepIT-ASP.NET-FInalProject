@@ -15,14 +15,21 @@ public class InvoiceController : ControllerBase
         _invoiceService = invoiceService;
     }
 
-    [HttpGet]
+    [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<InvoiceResponseDTO>>> GetAll()
     {
         var invoices = await _invoiceService.GetAllAsync();
         return Ok(invoices);
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<InvoiceResponseDTO>>> GetPaged([FromQuery] InvoiceQueryParams queryParams)
+    {
+        var invoices = await _invoiceService.GetPagedAsync(queryParams);
+        return Ok(invoices);
+    }
+
+    [HttpGet("id")]
     public async Task<ActionResult<InvoiceResponseDTO>> GetById(Guid id)
     {
         var invoice = await _invoiceService.GetByIdAsync(id);
@@ -44,7 +51,7 @@ public class InvoiceController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = createdInvoice.Id }, createdInvoice);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("id")]
     public async Task<ActionResult<InvoiceResponseDTO>> Update(Guid id, [FromBody] UpdateInvoiceRequestDTO invoice)
     {
         if (!ModelState.IsValid)
@@ -59,7 +66,7 @@ public class InvoiceController : ControllerBase
         return Ok(updatedInvoice);
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("id")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _invoiceService.DeleteAsync(id);
@@ -70,7 +77,7 @@ public class InvoiceController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/archive")]
+    [HttpPost("id/archive")]
     public async Task<IActionResult> Archive(Guid id)
     {
         var result = await _invoiceService.ArchiveAsync(id);
@@ -81,7 +88,7 @@ public class InvoiceController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/status")]
+    [HttpPost("id/status")]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromQuery] string newStatus)
     {
         try

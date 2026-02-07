@@ -16,14 +16,20 @@ public class CustomerController : ControllerBase
         _customerService = customerService;
     }
 
-    [HttpGet]
+    [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<CustomerResponseDTO>>> GetAll()
     {
         var customers = await _customerService.GetAllAsync();
         return Ok(customers);
     }
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<CustomerResponseDTO>>> GetPaged([FromQuery]CustomerQueryParams queryParams)
+    {
+        var customers = await _customerService.GetPagedAsync(queryParams);
+        return Ok(customers);
+    }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("id")]
     public async Task<ActionResult<CustomerResponseDTO>> GetById(Guid id)
     {
         var customer = await _customerService.GetByIdAsync(id);
@@ -45,7 +51,7 @@ public class CustomerController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = createdCustomer.Id }, createdCustomer);
     }
 
-    [HttpPut("{id:guid}")]
+    [HttpPut("id")]
     public async Task<ActionResult<CustomerResponseDTO>> Update(Guid id, [FromBody]UpdateCustomerRequestDTO customer)
     {
         if (!ModelState.IsValid)
@@ -60,7 +66,7 @@ public class CustomerController : ControllerBase
         return Ok(updatedCustomer);
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("id")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deletedCustomer = await _customerService.DeleteAsync(id);
@@ -71,7 +77,7 @@ public class CustomerController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("{id:guid}/archive")]
+    [HttpPost("id/archive")]
     public async Task<IActionResult> Archive(Guid id)
     {
         var archivedCustomer = await _customerService.ArchiveAsync(id);

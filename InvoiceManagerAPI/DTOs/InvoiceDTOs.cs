@@ -16,13 +16,13 @@ public class CreateInvoiceRequestDTO
     /// <summary>
     /// Start date of the work/service period.
     /// </summary>
-    /// <example>2026-02-03T09:00:00Z</example>
+    /// <example>2026-02-03</example>
     public DateTimeOffset StartDate { get; set; }
 
     /// <summary>
     /// End date of the work/service period.
     /// </summary>
-    /// <example>2026-02-10T17:00:00Z</example>
+    /// <example>2026-02-10</example>
     public DateTimeOffset EndDate { get; set; }
 
     /// <summary>
@@ -113,4 +113,23 @@ public class InvoiceResponseDTO
     public string? Comment { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
+}
+
+public class InvoiceQueryParams
+{
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+
+    public string? SortBy { get; set; }
+    public string? SortDirection { get; set; }
+
+    public string? Search { get; set; }
+    public string? CustomerName { get; set; }
+    public string? Status { get; set; }
+
+    public decimal? MinTotal { get; set; }
+    public decimal? MaxTotal { get; set; }
+
+    public DateTimeOffset? StartDateFrom { get; set; }
+    public DateTimeOffset? StartDateTo { get; set; }
 }

@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.Configuration.Annotations;
+using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Models;
@@ -114,4 +116,87 @@ public class InvoiceService : IInvoiceService
         await _context.Entry(updatedInvoice).Reference(i => i.Customer).LoadAsync();
         return _mapper.Map<InvoiceResponseDTO>(updatedInvoice);
     }
+
+    public async Task<PagedResult<InvoiceResponseDTO>> GetPagedAsync(InvoiceQueryParams queryParams)
+    {
+        var query = _context.Invoices.Where(i => i.DeletedAt == null).Include(i => i.Customer).Include(i => i.Rows).AsQueryable();
+
+        if (!string.IsNullOrEmpty(queryParams.CustomerName))
+        {
+            var searchTerm = queryParams.CustomerName.ToLower();
+            query = query.Where(i => i.Customer!.Name.ToLower().Contains(searchTerm));
+        }
+
+        if (!string.IsNullOrEmpty(queryParams.Status))
+        {
+            if (Enum.TryParse<InvoiceStatus>(queryParams.Status, true, out var status))
+            {
+                query = query.Where(i => i.Status == status);
+            }
+        }
+
+        if (queryParams.MinTotal.HasValue)
+        {
+            query = query.Where(i => i.TotalSum >= queryParams.MinTotal.Value);
+        }
+
+        if (queryParams.MaxTotal.HasValue)
+        {
+            query = query.Where(i => i.TotalSum <= queryParams.MaxTotal.Value);
+        }
+
+        if (queryParams.StartDateFrom.HasValue)
+        {
+            query = query.Where(i => i.StartDate >= queryParams.StartDateFrom.Value);
+        }
+
+        if (queryParams.StartDateTo.HasValue)
+        {
+            query = query.Where(i => i.StartDate <= queryParams.StartDateTo.Value);
+        }
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            var searchTerm = queryParams.Search.ToLower();
+            query = query.Where(i => i.Customer != null && i.Customer.Name.ToLower().Contains(searchTerm) ||
+                                     i.Comment != null && i.Comment.ToLower().Contains(searchTerm));
+        }
+
+        query = ApplySorting(query, queryParams.SortBy, queryParams.SortDirection);
+
+        var totalCount = await query.CountAsync();
+        var skip = (queryParams.Page - 1) * queryParams.PageSize;
+        var invoices = await query.Skip(skip)
+                               .Take(queryParams.PageSize)
+                               .ToListAsync();
+        var invoiceDTOs = _mapper.Map<IEnumerable<InvoiceResponseDTO>>(invoices);
+        return PagedResult<InvoiceResponseDTO>.Create(invoiceDTOs, queryParams.Page, queryParams.PageSize, totalCount);
+    }
+
+    private IQueryable<Invoice> ApplySorting(IQueryable<Invoice> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrEmpty(sortBy))
+        {
+            return query.OrderByDescending(i => i.CreatedAt);
+        }
+        var isDescending = sortDirection?.ToLower() == "desc";
+
+        return sortBy.ToLower() switch
+        {
+            "customername" => isDescending 
+                            ? query.OrderByDescending(i => i.Customer!.Name) 
+                            : query.OrderBy(i => i.Customer!.Name),
+            "startdate" => isDescending 
+                            ? query.OrderByDescending(i => i.StartDate) 
+                            : query.OrderBy(i => i.StartDate),
+            "total" => isDescending 
+                            ? query.OrderByDescending(i => i.TotalSum) 
+                            : query.OrderBy(i => i.TotalSum),
+            "createdat" => isDescending
+                            ? query.OrderByDescending(c => c.CreatedAt)
+                            : query.OrderBy(c => c.CreatedAt),
+            _ => query.OrderByDescending(i => i.CreatedAt)
+        };
+    }
+
 }

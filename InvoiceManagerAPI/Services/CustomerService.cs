@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Models;
@@ -91,5 +92,52 @@ public class CustomerService : ICustomerService
         _mapper.Map(customer, updatedCustomer);
         await _context.SaveChangesAsync();
         return _mapper.Map<CustomerResponseDTO>(updatedCustomer);
+    }
+    public async Task<PagedResult<CustomerResponseDTO>> GetPagedAsync(CustomerQueryParams queryParams)
+    {
+        var query = _context.Customers.Where(c => c.DeletedAt == null).AsQueryable();
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            var searchTerm = queryParams.Search.ToLower();
+            query = query.Where(c => c.Name.ToLower().Contains(searchTerm) ||
+                                c.Address != null && c.Address.ToLower().Contains(searchTerm) ||
+                                c.Email.ToLower().Contains(searchTerm));
+        }
+
+        query = ApplySorting(query, queryParams.SortBy, queryParams.SortDirection);
+
+        var totalCount = await query.CountAsync();
+        var skip = (queryParams.Page - 1) * queryParams.PageSize;
+        var customers = await query.Skip(skip)
+                               .Take(queryParams.PageSize)
+                               .ToListAsync();
+        var customerDTOs = _mapper.Map<IEnumerable<CustomerResponseDTO>>(customers);
+        return PagedResult<CustomerResponseDTO>.Create(customerDTOs, queryParams.Page, queryParams.PageSize, totalCount);
+    }
+
+    private IQueryable<Customer> ApplySorting(IQueryable<Customer> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrEmpty(sortBy))
+        {
+            return query.OrderByDescending(c => c.CreatedAt);
+        }
+        var isDescending = sortDirection?.ToLower() == "desc";
+        return sortBy.ToLower() switch
+        {
+            "name" => isDescending 
+                    ? query.OrderByDescending(c => c.Name) 
+                    : query.OrderBy(c => c.Name),
+            "email" => isDescending 
+                    ? query.OrderByDescending(c => c.Email) 
+                    : query.OrderBy(c => c.Email),
+            "address" => isDescending 
+                    ? query.OrderByDescending(c => c.Address) 
+                    : query.OrderBy(c => c.Address),
+            "createdat" => isDescending 
+                    ? query.OrderByDescending(c => c.CreatedAt) 
+                    : query.OrderBy(c => c.CreatedAt),
+            _ => query.OrderByDescending(c => c.CreatedAt)
+        };
     }
 }

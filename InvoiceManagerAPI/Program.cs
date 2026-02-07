@@ -1,5 +1,8 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.Mappings;
+using InvoiceManagerAPI.Models;
 using InvoiceManagerAPI.Services;
 using InvoiceManagerAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +53,9 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
 
 var app = builder.Build();
 
