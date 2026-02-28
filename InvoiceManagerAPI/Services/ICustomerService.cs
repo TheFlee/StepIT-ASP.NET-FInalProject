@@ -1,7 +1,7 @@
 ﻿using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.DTOs;
 
-namespace InvoiceManagerAPI.Services.Interfaces;
+namespace InvoiceManagerAPI.Services;
 
 public interface ICustomerService
 {

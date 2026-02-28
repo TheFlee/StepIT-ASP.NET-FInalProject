@@ -4,8 +4,10 @@ using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Models;
-using InvoiceManagerAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 namespace InvoiceManagerAPI.Services;
 
@@ -199,4 +201,82 @@ public class InvoiceService : IInvoiceService
         };
     }
 
+    public async Task<byte[]> GeneratePdfAsync(Guid id)
+    {
+        var invoice = await _context.Invoices
+                                    .Where(i => i.DeletedAt == null)
+                                    .Include(i => i.Customer)
+                                    .Include(i => i.Rows)
+                                    .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null)
+            throw new ArgumentException($"Invoice with ID {id} does not exist");
+
+        var pdfBytes = QuestPDF.Fluent.Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.DefaultTextStyle(x => x.FontSize(12));
+
+                page.Header()
+                    .Text($"Invoice #{invoice.Id}")
+                    .FontSize(18)
+                    .Bold()
+                    .AlignCenter();
+
+                page.Content()
+                    .Column(column =>
+                    {
+                        column.Item().Text("");
+                        column.Item().Text($"Customer: {invoice.Customer?.Name}");
+                        column.Item().Text($"Email: {invoice.Customer?.Email}");
+                        column.Item().Text($"Address: {invoice.Customer?.Address}");
+                        column.Item().Text($"Phone: {invoice.Customer?.PhoneNumber}");
+                        column.Item().Text($"Invoice Date: {invoice.StartDate:yyyy-MM-dd}");
+                        column.Item().Text("");
+
+                        column.Item().LineHorizontal(1);
+
+                        column.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Text("Service").Bold();
+                                header.Cell().Text("Quantity").Bold();
+                                header.Cell().Text("Amount").Bold();
+                                header.Cell().Text("Sum").Bold();
+                            });
+
+                            foreach (var row in invoice.Rows)
+                            {
+                                table.Cell().Text(row.Service);
+                                table.Cell().Text(row.Quantity.ToString());
+                                table.Cell().Text(row.Amount.ToString("0.00"));
+                                table.Cell().Text(row.Sum.ToString("0.00"));
+                            }
+                        });
+
+                        column.Item().LineHorizontal(1);
+                        column.Item().Text("");
+                        column.Item().Text($"Total: {invoice.TotalSum:0.00}").Bold();
+                    });
+
+                page.Footer()
+                    .AlignCenter()
+                    .Text("Thank you for your business!");
+            });
+        }).GeneratePdf();
+
+        return await Task.FromResult(pdfBytes);
+    }
 }

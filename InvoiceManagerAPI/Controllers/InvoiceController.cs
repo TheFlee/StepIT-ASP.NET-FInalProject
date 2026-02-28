@@ -1,5 +1,5 @@
 ﻿using InvoiceManagerAPI.DTOs;
-using InvoiceManagerAPI.Services.Interfaces;
+using InvoiceManagerAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -99,6 +99,20 @@ public class InvoiceController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet("id/pdf")]
+    public async Task<IActionResult> GeneratePdf(Guid id)
+    {
+        try
+        {
+            var pdfData = await _invoiceService.GeneratePdfAsync(id);
+            return File(pdfData, "application/pdf", $"Invoice_{id}.pdf");
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(ex.Message);
         }
     }
 }

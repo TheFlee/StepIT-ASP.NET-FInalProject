@@ -3,7 +3,6 @@ using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Models;
-using InvoiceManagerAPI.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceManagerAPI.Services;

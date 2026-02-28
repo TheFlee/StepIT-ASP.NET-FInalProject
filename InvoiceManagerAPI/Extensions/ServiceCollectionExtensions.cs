@@ -2,8 +2,9 @@
 using FluentValidation.AspNetCore;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.Mappings;
+using InvoiceManagerAPI.Models;
 using InvoiceManagerAPI.Services;
-using InvoiceManagerAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
@@ -75,7 +76,16 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
+        services.AddScoped<IAuthService, AuthService>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddIdentity(
+        this IServiceCollection services)
+    {
+        services.AddIdentity<User, IdentityRole>()
+            .AddEntityFrameworkStores<InvoiceManagerDbContext>();
         return services;
     }
 }

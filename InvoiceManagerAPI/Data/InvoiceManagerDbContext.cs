@@ -1,9 +1,10 @@
 ﻿using InvoiceManagerAPI.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceManagerAPI.Data;
 
-public class InvoiceManagerDbContext : DbContext
+public class InvoiceManagerDbContext : IdentityDbContext<User>
 {
     public InvoiceManagerDbContext(DbContextOptions<InvoiceManagerDbContext> options) : base(options)
     {
@@ -15,7 +16,6 @@ public class InvoiceManagerDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
         // Customer
         modelBuilder.Entity<Customer>(entity =>
         {

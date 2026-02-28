@@ -1,4 +1,6 @@
 ﻿
+using InvoiceManagerAPI.Middlewares;
+
 namespace InvoiceManagerAPI.Extensions;
 
 public static class PipelineExtensions
@@ -21,6 +23,8 @@ public static class PipelineExtensions
                 }
                 );
         }
+
+        app.UseMiddleware<GlobalExceptionMiddleware>();
 
         app.UseAuthorization();
 

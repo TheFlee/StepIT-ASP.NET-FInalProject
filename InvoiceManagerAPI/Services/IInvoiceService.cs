@@ -1,7 +1,7 @@
 ﻿using InvoiceManagerAPI.Common;
 using InvoiceManagerAPI.DTOs;
 
-namespace InvoiceManagerAPI.Services.Interfaces;
+namespace InvoiceManagerAPI.Services;
 
 public interface IInvoiceService
 {
@@ -13,4 +13,5 @@ public interface IInvoiceService
     Task<bool> DeleteAsync(Guid id);
     Task<bool> ArchiveAsync(Guid id);
     Task ChangeStatusAsync(Guid id, string newStatus);
+    Task<byte[]> GeneratePdfAsync(Guid id);
 }
