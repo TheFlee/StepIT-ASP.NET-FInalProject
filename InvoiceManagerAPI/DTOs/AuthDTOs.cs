@@ -15,6 +15,6 @@ public class LoginRequestDTO
 
 public class AuthResponseDTO
 {
-
     public string Email { get; set; } = string.Empty;
+    public string AccessToken { get; set; } = string.Empty;
 }

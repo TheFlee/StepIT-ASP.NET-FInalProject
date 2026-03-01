@@ -6,7 +6,9 @@ builder.Services.AddSwagger()
                 .AddInvoiceManagerDbContext(builder.Configuration)
                 .AddFluentValidation()
                 .AddIdentity()
-                .AddAutoMapperAndServices();
+                .AddAutoMapperAndServices()
+                .AddAuthenticationAndAuthorization();
+
 
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 

@@ -1,12 +1,15 @@
 ﻿using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace InvoiceManagerAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class CustomerController : ControllerBase
 {
     private readonly ICustomerService _customerService;
@@ -19,7 +22,8 @@ public class CustomerController : ControllerBase
     [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<CustomerResponseDTO>>> GetAll()
     {
-        var customers = await _customerService.GetAllAsync();
+        var userId = GetCurrentUserId();
+        var customers = await _customerService.GetAllAsync(userId);
         return Ok(customers);
     }
     [HttpGet]
@@ -32,7 +36,8 @@ public class CustomerController : ControllerBase
     [HttpGet("id")]
     public async Task<ActionResult<CustomerResponseDTO>> GetById(Guid id)
     {
-        var customer = await _customerService.GetByIdAsync(id);
+        var userId = GetCurrentUserId();
+        var customer = await _customerService.GetByIdAsync(id, userId);
         if (customer is null)
         {
             return NotFound($"Customer with ID {id} not found");
@@ -47,7 +52,8 @@ public class CustomerController : ControllerBase
         {
             return BadRequest(ModelState);
         }
-        var createdCustomer = await _customerService.CreateAsync(customer);
+        var userId = GetCurrentUserId();
+        var createdCustomer = await _customerService.CreateAsync(customer, userId);
         return CreatedAtAction(nameof(GetById), new { id = createdCustomer.Id }, createdCustomer);
     }
 
@@ -86,5 +92,11 @@ public class CustomerController : ControllerBase
             return NotFound($"Customer with ID {id} not found");
         }
         return NoContent();
+    }
+
+    private string GetCurrentUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            throw new UnauthorizedAccessException();
     }
 }

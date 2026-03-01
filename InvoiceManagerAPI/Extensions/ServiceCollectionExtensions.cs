@@ -1,9 +1,11 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using InvoiceManagerAPI.Authentication;
 using InvoiceManagerAPI.Data;
 using InvoiceManagerAPI.Mappings;
 using InvoiceManagerAPI.Models;
 using InvoiceManagerAPI.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -43,6 +45,10 @@ public static class ServiceCollectionExtensions
 
             if (File.Exists(xmlPath))
                 options.IncludeXmlComments(xmlPath);
+
+            options.AddSecurityDefinition("Opaque", new OpenApiSecurityScheme { Description = "Authorization: Bearer {token}", Name = "Authorization", In = ParameterLocation.Header, Type = SecuritySchemeType.ApiKey, Scheme = "Opaque" });
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement { { new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Opaque" } }, Array.Empty<string>() } });
+
         });
 
         return services;
@@ -77,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IInvoiceService, InvoiceService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ITokenService, TokenService>();
 
         return services;
     }
@@ -84,8 +91,20 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddIdentity(
         this IServiceCollection services)
     {
-        services.AddIdentity<User, IdentityRole>()
+        services.AddIdentityCore<User>()
             .AddEntityFrameworkStores<InvoiceManagerDbContext>();
+        return services;
+    }
+
+    public static IServiceCollection AddAuthenticationAndAuthorization(
+    this IServiceCollection services)
+    {
+        services.AddAuthentication("Opaque")
+            .AddScheme<AuthenticationSchemeOptions, OpaqueAuthenticationHandler>
+            ("Opaque", options => { });
+
+        services.AddAuthorization();
+
         return services;
     }
 }

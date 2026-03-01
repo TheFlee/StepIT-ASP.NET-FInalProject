@@ -1,12 +1,15 @@
 ﻿using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace InvoiceManagerAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class InvoiceController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
@@ -18,7 +21,8 @@ public class InvoiceController : ControllerBase
     [HttpGet("all")]
     public async Task<ActionResult<IEnumerable<InvoiceResponseDTO>>> GetAll()
     {
-        var invoices = await _invoiceService.GetAllAsync();
+        var userId = GetCurrentUserId();
+        var invoices = await _invoiceService.GetAllAsync(userId);
         return Ok(invoices);
     }
 
@@ -47,7 +51,8 @@ public class InvoiceController : ControllerBase
         {
             return BadRequest(ModelState);
         }
-        var createdInvoice = await _invoiceService.CreateAsync(invoice);
+        var userId = GetCurrentUserId();
+        var createdInvoice = await _invoiceService.CreateAsync(invoice, userId);
         return CreatedAtAction(nameof(GetById), new { id = createdInvoice.Id }, createdInvoice);
     }
 
@@ -114,5 +119,11 @@ public class InvoiceController : ControllerBase
         {
             return NotFound(ex.Message);
         }
+    }
+
+    private string GetCurrentUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            throw new UnauthorizedAccessException();
     }
 }

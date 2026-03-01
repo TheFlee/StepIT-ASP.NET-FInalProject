@@ -53,13 +53,12 @@ public class InvoiceService : IInvoiceService
     }
 
 
-    public async Task<InvoiceResponseDTO> CreateAsync(CreateInvoiceRequestDTO invoice)
+    public async Task<InvoiceResponseDTO> CreateAsync(CreateInvoiceRequestDTO invoice, string currentUserId)
     {
-        var isCostumerExists = await _context.Customers.AnyAsync(c => c.Id == invoice.CustomerId);
-        if (!isCostumerExists)
-        {
-            throw new ArgumentException($"Customer with ID {invoice.CustomerId} does not exist");
-        }
+        var customer = await _context.Customers
+            .FirstOrDefaultAsync(c => c.Id == invoice.CustomerId && c.UserId == currentUserId);
+        if (customer == null)
+            throw new UnauthorizedAccessException($"Customer with ID {invoice.CustomerId} does not exist or does not belong to the current user");
         var newInvoice = _mapper.Map<Invoice>(invoice);
 
         _context.Invoices.Add(newInvoice);
@@ -81,12 +80,13 @@ public class InvoiceService : IInvoiceService
         return true;
     }
 
-    public async Task<IEnumerable<InvoiceResponseDTO>> GetAllAsync()
+    public async Task<IEnumerable<InvoiceResponseDTO>> GetAllAsync(string currentUserId)
     {
-        var invoices = await _context.Invoices.Where(i => i.DeletedAt == null)
-                                              .Include(i => i.Customer)
-                                              .Include(i => i.Rows)
-                                              .ToListAsync();
+        var invoices = await _context.Invoices
+            .Where(i => i.DeletedAt == null && i.Customer!.UserId == currentUserId)
+            .Include(i => i.Customer)
+            .Include(i => i.Rows)
+            .ToListAsync();
 
         return _mapper.Map<IEnumerable<InvoiceResponseDTO>>(invoices);
     }

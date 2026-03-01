@@ -7,30 +7,32 @@ namespace InvoiceManagerAPI.Services;
 public class AuthService : IAuthService
 {
     private readonly UserManager<User> _userManager;
+    private readonly ITokenService _tokenService;
 
-    public AuthService(UserManager<User> userManager)
+    public AuthService(UserManager<User> userManager, ITokenService tokenService)
     {
         _userManager = userManager;
+        _tokenService = tokenService;
     }
 
     public async Task<AuthResponseDTO> LoginAsync(LoginRequestDTO request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
 
-        if (user == null)
-        {
+        if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             throw new InvalidOperationException("Invalid email or password.");
-        }
 
-        var isValidPassword = await _userManager.CheckPasswordAsync(user, request.Password);
+        await _tokenService.RevokeAllAsync(user.Id);
 
-        if (!isValidPassword)
-        {
-            throw new InvalidOperationException("Invalid email or password.");
-        }
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _userManager.UpdateAsync(user);
+
+        var token = await _tokenService.CreateAsync(user);
+
         return new AuthResponseDTO
         {
-            Email = request.Email
+            Email = user.Email!,
+            AccessToken = token
         };
     }
 

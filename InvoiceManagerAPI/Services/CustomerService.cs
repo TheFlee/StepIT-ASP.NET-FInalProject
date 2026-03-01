@@ -30,9 +30,10 @@ public class CustomerService : ICustomerService
         return true;
     }
 
-    public async Task<CustomerResponseDTO> CreateAsync(CreateCustomerRequestDTO customer)
+    public async Task<CustomerResponseDTO> CreateAsync(CreateCustomerRequestDTO customer, string currentUserId)
     {
         var newCustomer = _mapper.Map<Customer>(customer);
+        newCustomer.UserId = currentUserId;
         _context.Customers.Add(newCustomer);
         await _context.SaveChangesAsync();
 
@@ -56,20 +57,23 @@ public class CustomerService : ICustomerService
         return true;
     }
 
-    public async Task<IEnumerable<CustomerResponseDTO>> GetAllAsync()
+    public async Task<IEnumerable<CustomerResponseDTO>> GetAllAsync(string currentUserId)
     {
-        var customers = await _context.Customers.Where(c => c.DeletedAt == null)
-                                                .Include(c => c.Invoices)
-                                                .ToListAsync();
+        var customers = await _context.Customers
+            .Where(c => c.DeletedAt == null && c.UserId == currentUserId)
+            .Include(c => c.Invoices)
+            .ToListAsync();
 
         return _mapper.Map<IEnumerable<CustomerResponseDTO>>(customers);
     }
 
-    public async Task<CustomerResponseDTO?> GetByIdAsync(Guid id)
+    public async Task<CustomerResponseDTO?> GetByIdAsync(Guid id, string currentUserId)
     {
-        var customer = await _context.Customers.Where(c => c.DeletedAt == null)
-                                               .Include(c => c.Invoices)
-                                               .FirstOrDefaultAsync(c => c.Id == id);
+        var customer = await _context.Customers
+            .Where(c => c.DeletedAt == null && c.UserId == currentUserId)
+            .Include(c => c.Invoices)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (customer is null)
         {
             return null;
