@@ -7,7 +7,7 @@ public interface ICustomerService
 {
     Task<IEnumerable<CustomerResponseDTO>> GetAllAsync(string currentUserId);
     Task<CustomerResponseDTO?> GetByIdAsync(Guid id, string currentUserId);
-    Task<PagedResult<CustomerResponseDTO>> GetPagedAsync(CustomerQueryParams queryParams);
+    Task<PagedResult<CustomerResponseDTO>> GetPagedAsync(CustomerQueryParams queryParams, string currentUserId);
     Task<CustomerResponseDTO> CreateAsync(CreateCustomerRequestDTO customer, string currentUserId);
     Task<CustomerResponseDTO?> UpdateAsync(Guid id, UpdateCustomerRequestDTO customer);
     Task<bool> DeleteAsync(Guid id);

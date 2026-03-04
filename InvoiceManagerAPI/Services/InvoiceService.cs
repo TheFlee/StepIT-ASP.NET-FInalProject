@@ -107,10 +107,14 @@ public class InvoiceService : IInvoiceService
     public async Task<InvoiceResponseDTO?> UpdateAsync(Guid id, UpdateInvoiceRequestDTO invoice)
     {
         var updatedInvoice = await _context.Invoices.Include(i => i.Rows).FirstOrDefaultAsync(i => i.Id == id);
+        
         if (updatedInvoice == null)
         {
             return null;
         }
+
+        if (updatedInvoice.Status != InvoiceStatus.Created)
+            throw new InvalidOperationException("Only invoices with status 'Created' can be edited.");
 
         _mapper.Map(invoice, updatedInvoice);
 
@@ -119,9 +123,11 @@ public class InvoiceService : IInvoiceService
         return _mapper.Map<InvoiceResponseDTO>(updatedInvoice);
     }
 
-    public async Task<PagedResult<InvoiceResponseDTO>> GetPagedAsync(InvoiceQueryParams queryParams)
+    public async Task<PagedResult<InvoiceResponseDTO>> GetPagedAsync(InvoiceQueryParams queryParams, string currentUserId)
     {
-        var query = _context.Invoices.Where(i => i.DeletedAt == null).Include(i => i.Customer).Include(i => i.Rows).AsQueryable();
+        var query = _context.Invoices
+            .Where(i => i.DeletedAt == null && i.Customer!.UserId == currentUserId)
+            .Include(i => i.Customer).Include(i => i.Rows).AsQueryable();
 
         if (!string.IsNullOrEmpty(queryParams.CustomerName))
         {

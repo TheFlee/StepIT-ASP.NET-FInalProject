@@ -29,7 +29,8 @@ public class CustomerController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CustomerResponseDTO>>> GetPaged([FromQuery]CustomerQueryParams queryParams)
     {
-        var customers = await _customerService.GetPagedAsync(queryParams);
+        var userId = GetCurrentUserId();
+        var customers = await _customerService.GetPagedAsync(queryParams, userId);
         return Ok(customers);
     }
 

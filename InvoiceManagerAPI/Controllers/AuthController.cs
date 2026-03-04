@@ -1,7 +1,9 @@
 ﻿using InvoiceManagerAPI.DTOs;
 using InvoiceManagerAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace InvoiceManagerAPI.Controllers;
 
@@ -34,5 +36,49 @@ public class AuthController : ControllerBase
         }
         var response = await _authService.LoginAsync(request);
         return Ok(response);
+    }
+
+    [Authorize]
+    [HttpPut("profile/update")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDTO request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        await _authService.UpdateProfileAsync(userId, request);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDTO request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        await _authService.ChangePasswordAsync(userId, request);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpDelete("profile/delete")]
+    public async Task<IActionResult> DeleteProfile()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized();
+
+        await _authService.DeleteProfileAsync(userId);
+        return NoContent();
     }
 }

@@ -48,7 +48,7 @@ public class CustomerService : ICustomerService
         {
             return false;
         }
-        if (customer.Invoices.Any(i => i.Status != InvoiceStatus.Created))
+        if (customer.Invoices.Where(i => i.DeletedAt == null).Any(i => i.Status != InvoiceStatus.Created))
         {
             return false;
         }
@@ -96,9 +96,9 @@ public class CustomerService : ICustomerService
         await _context.SaveChangesAsync();
         return _mapper.Map<CustomerResponseDTO>(updatedCustomer);
     }
-    public async Task<PagedResult<CustomerResponseDTO>> GetPagedAsync(CustomerQueryParams queryParams)
+    public async Task<PagedResult<CustomerResponseDTO>> GetPagedAsync(CustomerQueryParams queryParams, string currentUserId)
     {
-        var query = _context.Customers.Where(c => c.DeletedAt == null).AsQueryable();
+        var query = _context.Customers.Where(c => c.DeletedAt == null && c.UserId == currentUserId).AsQueryable();
 
         if (!string.IsNullOrEmpty(queryParams.Search))
         {

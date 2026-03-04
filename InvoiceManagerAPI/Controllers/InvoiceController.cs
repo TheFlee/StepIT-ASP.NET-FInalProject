@@ -29,7 +29,8 @@ public class InvoiceController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<InvoiceResponseDTO>>> GetPaged([FromQuery] InvoiceQueryParams queryParams)
     {
-        var invoices = await _invoiceService.GetPagedAsync(queryParams);
+        var userId = GetCurrentUserId();
+        var invoices = await _invoiceService.GetPagedAsync(queryParams, userId);
         return Ok(invoices);
     }
 
